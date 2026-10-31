@@ -70,9 +70,11 @@
         }, 3000);
       })
       .catch(err => {
-        document.getElementById("status").innerText = "網路連線錯誤";
-        console.error(err);
-      });
+  // 讓手機螢幕直接顯示錯誤原因
+  document.getElementById("status").innerText = "連線錯誤: " + err.message;
+  console.error(err);
+});
+
     }
   </script>
 </body>

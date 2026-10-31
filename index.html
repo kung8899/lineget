@@ -1,69 +1,79 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在同步資料...</title>
-    <script src="https://line-scdn.net"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>亞都好友綁定</title>
+  <!-- 引入 LINE LIFF SDK -->
+  <script src="https://line-scdn.net"></script>
 </head>
 <body>
-    <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif;">
-        系統綁定中，請稍候...
-    </div>
+  <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif;">
+    自動綁定中，請稍候...
+  </div>
 
-    <script>
-        // 1. 初始化 LIFF
-        liff.init({ liffId: "2012308870-xwtXvPn5" })
-            .then(() => {
-                if (!liff.isLoggedIn()) {
-                    liff.login(); // 如果沒登入，跳出登入畫面
-                } else {
-                    processUserData();
-                }
-            })
-            .catch((err) => {
-                document.getElementById('status').innerText = "初始化失敗";
-            });
-
-        function processUserData() {
-            liff.getProfile()
-                .then(profile => {
-                    const userId = profile.userId;
-                    const userLang = liff.getLanguage(); // 取得語系
-                    
-                    let langCode = "zh";
-                    if (userLang.startsWith("id")) langCode = "id";
-                    if (userLang.startsWith("en")) langCode = "en";
-
-                    // 呼叫送出資料的函式
-                    saveToGoogleSheet(userId, langCode);
-                })
-                .catch(err => {
-                    document.getElementById('status').innerText = "讀取個人資料失敗";
-                });
+  <script>
+    // 1. 初始化 LIFF
+    liff.init({ liffId: "2012308870-xwtXvPn5" })
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          // 如果沒登入，強制引導登入
+          liff.login();
+        } else {
+          // 已登入，開始取得資料
+          processUserData();
         }
+      })
+      .catch((err) => {
+        document.getElementById("status").innerText = "初始化失敗";
+        console.error(err);
+      });
 
-        function saveToGoogleSheet(userId, langCode) {
-            const gasUrl = 'https://google.com';
+    // 2. 處理用戶資料
+    function processUserData() {
+      liff.getProfile()
+        .then(profile => {
+          const userId = profile.userId;
+          const userLang = liff.getLanguage(); // 取得用戶端語系
 
-            // 💡 關鍵：改用網址參數（表單格式）傳送，Google 絕對不會阻擋
-            const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
+          // 判斷語系代碼
+          let langCode = "zh";
+          if (userLang.startsWith("zh")) langCode = "zh";
+          if (userLang.startsWith("en")) langCode = "en";
 
-            fetch(targetUrl, {
-                method: 'GET', // 改用簡單的 GET 方式傳送
-                mode: 'no-cors' // 強制不檢查跨網域
-            })
-            .then(() => {
-                // 只要有送出去，就直接當作成功
-                document.getElementById('status').innerText = "資料登記成功！視窗即將關閉。";
-                setTimeout(() => {
-                    liff.closeWindow(); // 關閉視窗
-                }, 1500);
-            })
-            .catch(err => {
-                document.getElementById('status').innerText = "網路連線異常";
-            });
-        }
-    </script>
+          // 將資料發送至 Google 試算表
+          saveToGoogleSheet(userId, langCode);
+        })
+        .catch(err => {
+          document.getElementById("status").innerText = "獲取個人資料失敗";
+          console.error(err);
+        });
+    }
+
+    // 3. 發送 GET 請求至 GAS
+    function saveToGoogleSheet(userId, langCode) {
+      // ⚠️ 請在此處貼上您真正的 GAS 網頁應用程式網址 ⚠️
+      const gasUrl = "https://google.com"; 
+      
+      // 修正參數名稱：改為 lineUserId 以對應後端
+      const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
+
+      fetch(targetUrl, {
+        method: "GET",
+        mode: "no-cors" // 解決跨網域 CORS 問題
+      })
+      .then(() => {
+        // 成功後顯示提示，並於 3 秒後自動關閉 LIFF 視窗
+        document.getElementById("status").innerText = "資料綁定成功！即將關閉視窗...";
+        setTimeout(() => {
+          liff.closeWindow();
+        }, 3000);
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "網路連線錯誤";
+        console.error(err);
+      });
+    }
+  </script>
 </body>
 </html>

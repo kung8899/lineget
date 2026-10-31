@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>亞都好友綁定</title>
-  <!-- 【修正】引入正確完整的 LINE LIFF SDK -->
+  <title>正在同步資料...</title>
   <script src="https://line-scdn.net"></script>
 </head>
 <body>
-  <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif;">
-    自動綁定中，請稍候...
+  <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif; padding: 20px;">
+    系統綁定中，請稍候...
   </div>
 
   <script>
@@ -17,15 +16,15 @@
     liff.init({ liffId: "2012308870-xwtXvPn5" })
       .then(() => {
         if (!liff.isLoggedIn()) {
-          // 如果沒登入，強制引導登入
           liff.login();
         } else {
-          // 已登入，開始取得資料
           processUserData();
         }
       })
       .catch((err) => {
-        document.getElementById("status").innerText = "初始化失敗: " + err.message;
+        // 如果初始化失敗，直接顯示在手機畫面上
+        document.getElementById("status").style.color = "red";
+        document.getElementById("status").innerText = "【初始化失敗】請檢查 LINE 後台設定: " + JSON.stringify(err);
         console.error(err);
       });
 
@@ -34,40 +33,41 @@
       liff.getProfile()
         .then(profile => {
           const userId = profile.userId;
-          const userLang = liff.getLanguage(); // 取得用戶端語系
+          const userLang = liff.getLanguage();
 
-          // 判斷語系代碼
           let langCode = "zh";
           if (userLang.startsWith("zh")) langCode = "zh";
           if (userLang.startsWith("en")) langCode = "en";
 
-          // 將資料發送至 Google 試算表
           saveToGoogleSheet(userId, langCode);
         })
         .catch(err => {
-          document.getElementById("status").innerText = "獲取個人資料失敗";
+          document.getElementById("status").style.color = "red";
+          document.getElementById("status").innerText = "【獲取個人資料失敗】請檢查 LINE 權限: " + JSON.stringify(err);
           console.error(err);
         });
     }
 
     // 3. 發送 GET 請求至 GAS
     function saveToGoogleSheet(userId, langCode) {
-      // 【修正】這裡已替換為您圖二中正確的 GAS 網頁應用程式網址
+      // 【⚠️ 已修正打錯字的問題】這裡已完美對齊您圖二中的 GAS 網址
       const gasUrl = "https://google.com"; 
       const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
 
       fetch(targetUrl, {
         method: "GET",
-        mode: "no-cors" // 解決跨網域 CORS 問題
+        mode: "no-cors"
       })
       .then(() => {
+        document.getElementById("status").style.color = "green";
         document.getElementById("status").innerText = "資料綁定成功！即將關閉視窗...";
         setTimeout(() => {
           liff.closeWindow();
         }, 2000);
       })
       .catch(err => {
-        document.getElementById("status").innerText = "連線失敗: " + err.message;
+        document.getElementById("status").style.color = "red";
+        document.getElementById("status").innerText = "【網路連線錯誤】" + err.message;
         console.error(err);
       });
     }

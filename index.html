@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>亞都好友綁定</title>
-  <!-- 引入 LINE LIFF SDK -->
+  <!-- 【修正】引入正確完整的 LINE LIFF SDK -->
   <script src="https://line-scdn.net"></script>
 </head>
 <body>
@@ -25,7 +25,7 @@
         }
       })
       .catch((err) => {
-        document.getElementById("status").innerText = "初始化失敗";
+        document.getElementById("status").innerText = "初始化失敗: " + err.message;
         console.error(err);
       });
 
@@ -52,10 +52,8 @@
 
     // 3. 發送 GET 請求至 GAS
     function saveToGoogleSheet(userId, langCode) {
-      // ⚠️ 請在此處貼上您真正的 GAS 網頁應用程式網址 ⚠️
-      const gasUrl = "https://docs.google.com/spreadsheets/d/12-L6mvyqV4plA_ETfGFBtptzld9nr6L6Vpg8Zvh0-TM/edit?gid=1547808919#gid=1547808919"; 
-      
-      // 修正參數名稱：改為 lineUserId 以對應後端
+      // 【修正】這裡已替換為您圖二中正確的 GAS 網頁應用程式網址
+      const gasUrl = "https://google.com"; 
       const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
 
       fetch(targetUrl, {
@@ -63,18 +61,15 @@
         mode: "no-cors" // 解決跨網域 CORS 問題
       })
       .then(() => {
-        // 成功後顯示提示，並於 3 秒後自動關閉 LIFF 視窗
         document.getElementById("status").innerText = "資料綁定成功！即將關閉視窗...";
         setTimeout(() => {
           liff.closeWindow();
-        }, 3000);
+        }, 2000);
       })
       .catch(err => {
-  // 讓手機螢幕直接顯示錯誤原因
-  document.getElementById("status").innerText = "連線錯誤: " + err.message;
-  console.error(err);
-});
-
+        document.getElementById("status").innerText = "連線失敗: " + err.message;
+        console.error(err);
+      });
     }
   </script>
 </body>

@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>正在同步資料...</title>
-  <!-- 【修正】確保使用官方標準且完整的 LINE SDK 網址 -->
   <script src="https://line-scdn.net"></script>
 </head>
 <body>
@@ -15,42 +14,48 @@
   <script>
     document.getElementById("status").innerText = "網頁腳本啟動，正在初始化 LINE SDK...";
 
-    liff.init({ liffId: "2012308870-xwtXvPn5" })
-      .then(() => {
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        } else {
-          liff.getProfile().then(profile => {
-            const userId = profile.userId;
-            const userLang = liff.getLanguage() || "zh";
-            let langCode = userLang.startsWith("zh") ? "zh" : "en";
+    // 加上 try catch 確保能抓到任何語法或非同步死鎖錯誤
+    try {
+      liff.init({ liffId: "2012308870-xwtXvPn5" })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(profile => {
+              const userId = profile.userId;
+              const userLang = liff.getLanguage() || "zh";
+              let langCode = userLang.startsWith("zh") ? "zh" : "en";
 
-            document.getElementById("status").innerText = "已取得資料，正在同步至試算表...";
+              document.getElementById("status").innerText = "已取得資料，正在同步至試算表...";
 
-            // 【修正】這裡已填入您專屬且字元完全正確的 Google GAS 網址
-            const gasUrl = "https://google.com"; 
-            const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
+              const gasUrl = "https://google.com"; 
+              const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
 
-            fetch(targetUrl, { method: "GET", mode: "no-cors" })
-              .then(() => {
-                document.getElementById("status").style.color = "green";
-                document.getElementById("status").innerText = "🎉 資料同步成功！即將關閉視窗...";
-                setTimeout(() => { liff.closeWindow(); }, 2000);
-              })
-              .catch(err => {
-                document.getElementById("status").style.color = "red";
-                document.getElementById("status").innerText = "【傳送失敗】網路連線錯誤: " + err.toString();
-              });
-          }).catch(err => {
-            document.getElementById("status").style.color = "red";
-            document.getElementById("status").innerText = "【獲取個人資料失敗】原因: " + err.toString();
-          });
-        }
-      })
-      .catch((err) => {
-        document.getElementById("status").style.color = "red";
-        document.getElementById("status").innerText = "【LIFF 初始化失敗】原因: " + err.toString();
-      });
+              fetch(targetUrl, { method: "GET", mode: "no-cors" })
+                .then(() => {
+                  document.getElementById("status").style.color = "green";
+                  document.getElementById("status").innerText = "🎉 資料同步成功！即將關閉視窗...";
+                  setTimeout(() => { liff.closeWindow(); }, 2000);
+                })
+                .catch(err => {
+                  document.getElementById("status").style.color = "red";
+                  document.getElementById("status").innerText = "【傳送失敗】網絡連線錯誤: " + err.toString();
+                });
+            }).catch(err => {
+              document.getElementById("status").style.color = "red";
+              document.getElementById("status").innerText = "【獲取個人資料失敗】原因: " + err.toString();
+            });
+          }
+        })
+        .catch((err) => {
+          // 如果 LINE 伺服器拒絕初始化，這裡會強制印出錯誤訊息
+          document.getElementById("status").style.color = "red";
+          document.getElementById("status").innerText = "【LIFF 初始化失敗】原因: " + JSON.stringify(err);
+        });
+    } catch (globalError) {
+      document.getElementById("status").style.color = "red";
+      document.getElementById("status").innerText = "【腳本執行錯誤】: " + globalError.message;
+    }
   </script>
 </body>
 </html>

@@ -3,37 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>正在同步資料...</title>
+  <title>亞都好友綁定測試</title>
+  <!-- 引入官方標準 LIFF SDK -->
   <script src="https://line-scdn.net"></script>
 </head>
 <body>
   <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif; padding: 20px;">
-    系統綁定中，請稍候...
+    網頁載入中，請稍候...
   </div>
 
   <script>
+    // 檢查環境防呆：如果網頁順利執行到這裡，文字一定會變
+    document.getElementById("status").innerText = "JavaScript 啟動成功，正在初始化 LIFF...";
+
     // 1. 初始化 LIFF
     liff.init({ liffId: "2012308870-xwtXvPn5" })
       .then(() => {
+        document.getElementById("status").style.color = "orange";
+        document.getElementById("status").innerText = "LIFF 初始化成功！正在檢查登入狀態...";
+        
         if (!liff.isLoggedIn()) {
+          document.getElementById("status").innerText = "偵測到未登入，正在導向 LINE 登入畫面...";
           liff.login();
         } else {
           processUserData();
         }
       })
       .catch((err) => {
-        // 如果初始化失敗，直接顯示在手機畫面上
         document.getElementById("status").style.color = "red";
-        document.getElementById("status").innerText = "【初始化失敗】請檢查 LINE 後台設定: " + JSON.stringify(err);
+        document.getElementById("status").innerText = "【LIFF 初始化失敗】原因: " + err.toString();
         console.error(err);
       });
 
     // 2. 處理用戶資料
     function processUserData() {
+      document.getElementById("status").style.color = "blue";
+      document.getElementById("status").innerText = "已登入，正在獲取您的 LINE ID...";
+      
       liff.getProfile()
         .then(profile => {
           const userId = profile.userId;
-          const userLang = liff.getLanguage();
+          const userLang = liff.getLanguage() || "zh";
 
           let langCode = "zh";
           if (userLang.startsWith("zh")) langCode = "zh";
@@ -43,14 +53,16 @@
         })
         .catch(err => {
           document.getElementById("status").style.color = "red";
-          document.getElementById("status").innerText = "【獲取個人資料失敗】請檢查 LINE 權限: " + JSON.stringify(err);
+          document.getElementById("status").innerText = "【獲取個人資料失敗】原因: " + err.toString();
           console.error(err);
         });
     }
 
     // 3. 發送 GET 請求至 GAS
     function saveToGoogleSheet(userId, langCode) {
-      // 【⚠️ 已修正打錯字的問題】這裡已完美對齊您圖二中的 GAS 網址
+      document.getElementById("status").style.color = "purple";
+      document.getElementById("status").innerText = "已取得 ID，正在寫入 Google 試算表...";
+      
       const gasUrl = "https://google.com"; 
       const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
 
@@ -60,14 +72,14 @@
       })
       .then(() => {
         document.getElementById("status").style.color = "green";
-        document.getElementById("status").innerText = "資料綁定成功！即將關閉視窗...";
+        document.getElementById("status").innerText = "🎉 資料同步成功！此視窗即將自動關閉...";
         setTimeout(() => {
           liff.closeWindow();
-        }, 2000);
+        }, 2500);
       })
       .catch(err => {
         document.getElementById("status").style.color = "red";
-        document.getElementById("status").innerText = "【網路連線錯誤】" + err.message;
+        document.getElementById("status").innerText = "【傳送試算表失敗】網路連線錯誤: " + err.toString();
         console.error(err);
       });
     }

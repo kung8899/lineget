@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在同步資料...</title>
+    <script src="https://line-scdn.net"></script>
+</head>
+<body>
+    <div id="status" style="text-align: center; margin-top: 50px; font-size: 18px; font-family: sans-serif;">
+        系統綁定中，請稍候...
+    </div>
+
+    <script>
+        // 填入您的 LIFF ID
+        liff.init({ liffId: "2012308870-xwtXvPn5" })
+            .then(() => {
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    processUserData();
+                }
+            })
+            .catch((err) => {
+                document.getElementById('status').innerText = "初始化失敗";
+                console.error(err);
+            });
+
+        function processUserData() {
+            liff.getProfile()
+                .then(profile => {
+                    const userId = profile.userId;
+                    const userLang = liff.getLanguage(); // 取得用戶 LINE 設定的語系
+                    
+                    let langCode = "zh";
+                    if (userLang.startsWith("id")) langCode = "id";
+                    if (userLang.startsWith("en")) langCode = "en";
+
+                    // 發送給您的 Google Apps Script 後端
+                    saveToGoogleSheet(userId, langCode);
+                })
+                .catch(err => {
+                    document.getElementById('status').innerText = "讀取個人資料失敗";
+                });
+        }
+
+        function saveToGoogleSheet(userId, langCode) {
+            // 填入您的 GAS 部署網址
+            const gasUrl = 'https://script.google.com/macros/s/AKfycbw0d0tt7wOp29_b02yFjC1n_OG0zywhruewWwCodkxpZYyhOHY2ShW1o7QzEgAfpe5Z/exec';
+
+            fetch(gasUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    lineUserId: userId,
+                    preferredLanguage: langCode
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    document.getElementById('status').innerText = "資料登記成功！視窗即將關閉。";
+                    setTimeout(() => {
+                        liff.closeWindow(); // 成功後自動關閉 LIFF 回到 LINE 聊天室
+                    }, 1500);
+                } else {
+                    document.getElementById('status').innerText = "寫入雲端失敗，請稍後重試。";
+                }
+            })
+            .catch(err => {
+                document.getElementById('status').innerText = "網路連線異常";
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>
+

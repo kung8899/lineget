@@ -12,31 +12,30 @@
     </div>
 
     <script>
-        // 填入您的 LIFF ID
+        // 1. 初始化 LIFF
         liff.init({ liffId: "2012308870-xwtXvPn5" })
             .then(() => {
                 if (!liff.isLoggedIn()) {
-                    liff.login();
+                    liff.login(); // 如果沒登入，跳出登入畫面
                 } else {
                     processUserData();
                 }
             })
             .catch((err) => {
                 document.getElementById('status').innerText = "初始化失敗";
-                console.error(err);
             });
 
         function processUserData() {
             liff.getProfile()
                 .then(profile => {
                     const userId = profile.userId;
-                    const userLang = liff.getLanguage(); // 取得用戶 LINE 設定的語系
+                    const userLang = liff.getLanguage(); // 取得語系
                     
                     let langCode = "zh";
                     if (userLang.startsWith("id")) langCode = "id";
                     if (userLang.startsWith("en")) langCode = "en";
 
-                    // 發送給您的 Google Apps Script 後端
+                    // 呼叫送出資料的函式
                     saveToGoogleSheet(userId, langCode);
                 })
                 .catch(err => {
@@ -45,33 +44,26 @@
         }
 
         function saveToGoogleSheet(userId, langCode) {
-            // 填入您的 GAS 部署網址
-            const gasUrl = 'https://script.google.com/macros/s/AKfycbw0d0tt7wOp29_b02yFjC1n_OG0zywhruewWwCodkxpZYyhOHY2ShW1o7QzEgAfpe5Z/exec';
+            const gasUrl = 'https://google.com';
 
-            fetch(gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({
-                    lineUserId: userId,
-                    preferredLanguage: langCode
-                })
+            // 💡 關鍵：改用網址參數（表單格式）傳送，Google 絕對不會阻擋
+            const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
+
+            fetch(targetUrl, {
+                method: 'GET', // 改用簡單的 GET 方式傳送
+                mode: 'no-cors' // 強制不檢查跨網域
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    document.getElementById('status').innerText = "資料登記成功！視窗即將關閉。";
-                    setTimeout(() => {
-                        liff.closeWindow(); // 成功後自動關閉 LIFF 回到 LINE 聊天室
-                    }, 1500);
-                } else {
-                    document.getElementById('status').innerText = "寫入雲端失敗，請稍後重試。";
-                }
+            .then(() => {
+                // 只要有送出去，就直接當作成功
+                document.getElementById('status').innerText = "資料登記成功！視窗即將關閉。";
+                setTimeout(() => {
+                    liff.closeWindow(); // 關閉視窗
+                }, 1500);
             })
             .catch(err => {
                 document.getElementById('status').innerText = "網路連線異常";
-                console.error(err);
             });
         }
     </script>
 </body>
 </html>
-

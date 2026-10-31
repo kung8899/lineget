@@ -53,7 +53,7 @@
     // 3. 發送 GET 請求至 GAS
     function saveToGoogleSheet(userId, langCode) {
       // ⚠️ 請在此處貼上您真正的 GAS 網頁應用程式網址 ⚠️
-      const gasUrl = "https://script.google.com/macros/s/AKfycbzpQxQ8-pMQLFy3pGELOiLQrUohfV_akLXL4Tnow40zBz3SatGjBGngq4Che54BmYY/exec"; 
+      const gasUrl = "https://docs.google.com/spreadsheets/d/12-L6mvyqV4plA_ETfGFBtptzld9nr6L6Vpg8Zvh0-TM/edit?gid=1547808919#gid=1547808919"; 
       
       // 修正參數名稱：改為 lineUserId 以對應後端
       const targetUrl = `${gasUrl}?lineUserId=${encodeURIComponent(userId)}&preferredLanguage=${encodeURIComponent(langCode)}`;
